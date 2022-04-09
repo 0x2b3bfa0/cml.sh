@@ -1,0 +1,38 @@
+#!/bin/sh
+set -x
+
+case "$(uname -m)" in
+  x86_64) processor=x64;;
+  arm64|aarch64) processor=arm64;;
+  *) echo "Processor '$(uname -m)' not supported" && exit 1;;
+esac
+
+case "$(uname -s)" in
+  Linux) system=linux;;
+  Darwin) system=macos;;
+  MINGW64*) system=win; suffix=.exe;;
+  *) echo "System '$(uname -s)' not supported" && exit 1;;
+esac
+
+if test -f /etc/alpine-release; then
+  system=alpine
+fi
+
+if test -z "$1"; then
+  version=latest/download
+else
+  version="download/$1"
+fi
+
+if command -v sudo 2>&1 >/dev/null; then
+  sudo=sudo
+fi
+
+for bin in /usr/local/bin /usr/bin /bin; do
+  $sudo test -w $bin && echo ":$PATH:" | grep -q :$bin: && break
+done
+
+release="https://github.com/iterative/cml/releases/$version/cml-$system-$processor$suffix"
+
+$sudo curl -fsSL "$release" -o $bin/cml
+$sudo chmod 755 $bin/cml

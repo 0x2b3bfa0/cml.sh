@@ -1,0 +1,20 @@
+on: pull_request
+jobs:
+  test:
+    strategy:
+      matrix:
+        system:
+        - windows-latest
+        - ubuntu-latest
+        - macos-latest
+    runs-on: ${{ matrix.system }}
+    steps:
+    - uses: actions/checkout@v3
+    - run: cat index.html | sh && cml --version
+    - if: matrix.system != 'windows-latest'
+      run: cat index.html | sh -s v0.15.0 && cml --version | grep 0.15.0
+    - if: matrix.system == 'ubuntu-latest'
+      run: |
+        docker run --rm --volume $PWD/index.html:/script.sh ubuntu sh -c 'apt update && apt install --yes curl && cat /script.sh | sh && cml --version'
+        docker run --rm --volume $PWD/index.html:/script.sh alpine sh -c 'apk add curl && cat /script.sh | sh && cml --version'
+      
